@@ -373,4 +373,89 @@ sudo systemctl status nginx
 > ```
 > Restart and check the status of the nginx service after making these changes.
 
-If your nginx status is active, then your web server is online! Try connecting by typing into the web browser the `ipv4` address of the server.
+## Task 4 - Firewall Setup
+
+Now that the server is configured, a firewall can be setup to secure the server. We will be using Arch Linux's Uncomplicated Firewall (UFW) which is a program that manages nftables and iptables, essentially filtering traffic before it reaches the network. In this instruction, we will set up UFW to allow `ssh` and `http` from anywhere as an instructional example. In practice, `ssh` should be only allowed in enterprise settings.
+
+### Installing `ufw` package
+
+First, use the `pacman` package manager to install `ufw`:
+```
+sudo pacman -S ufw
+```
+
+>[!WARNING]
+> **Do not** enable UFW immediately after installing the package. We will need to configure it to allow ssh and http otherwise we will not have access to the remote system anymore after exiting.
+
+### Allowing `ssh` and `http` access
+
+For instructional reasons, we will enable ssh from anywhere. In practice, we would **only** allow ssh connections from specific and private ip addresses, as well as using host service that authorizes private connections.
+
+To allow **ssh connection**:
+```
+sudo ufw allow ssh
+```
+
+We also want to limit the rate of ssh attempts to prevent multiple unauthorized attempted connections:
+```
+sudo ufw limit ssh
+```
+
+Next, since we are working with web servers, we want to allow **http connections**:
+```
+sudo ufw allow http
+```
+
+After each of these commands, we will see an output message saying `Rules updated` and `Rules updated (v6)`.
+
+Finally, enable `ufw` after creating our rules:
+```
+sudo ufw enable
+```
+
+To **check the status** of the firewall and our rules:
+```
+sudo ufw status verbose
+```
+
+Your output should be displayed like below:
+```
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22                         LIMIT IN    Anywhere                  
+80                         ALLOW IN    Anywhere                  
+22 (v6)                    LIMIT IN    Anywhere (v6)             
+80 (v6)                    ALLOW IN    Anywhere (v6)  
+```
+
+At this point your firewall should be active and enabled on system startup. If you run into errors please refer to the troubleshooting section below.
+
+### Troubleshooting
+You may run into errors regarding iptables while allowing connections. For example:
+
+``` 
+[Errno 2] iptables v1.8.10 (legacy): can't initialize iptables table 'filter': Table does not exist (do you need to insmod?)
+Perhaps iptables or your kernel needs to be upgraded.
+```
+
+To fix this error, you may need to update your system and packages (as it states the iptable version is a legacy version). Run these commands below to fix this error:
+
+Updating system
+```
+sudo pacman -Syu #
+```
+Installing new iptables version
+```
+sudo pacman -S iptables
+```
+Restart iptables service
+```
+sudo systemctl restart iptable
+```
+
+>[!NOTE]
+> If the error still exists, your system may need to be rebooted using `sudo reboot` which will kick you out of your remote Linux system and will require you to ssh back in. Keep in mind that we still have **not** enabled the UFW yet, so we are still able to regularly ssh in.
+
+## Task 5 - Connect to your web server
