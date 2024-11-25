@@ -1,9 +1,15 @@
-# Table of Contents
-
-
 # About Assignment
 
-These instructions are set up using the Arch Linux distribution for Linux. Please refer to the appropriate commands and manuals if your distribution is different.
+These instructions are set up using the Arch Linux distribution for Linux. This repository will instruct how to setup a Bash script that generates a static `index.html` file that displays some system information. By using the `systemd` utility, a service file will be configured to execute the script with a timer file that activates the service everyday at 05:00. The HTML document will be served using the web server `nginx` secured by the Uncomplicated Firewall `ufw` package.
+
+# Table of Contents
+
+1. [User Setup](#task-1---user-setup)
+2. [Service and Timer Setup](#task-2---service-and-timer-setup)
+3. [nginx Configuration](#task-3---nginx-configuration)
+4. [Firewall Setup](#task-4---firewall-setup)
+5. [Successful Connection Example](#task-5---connect-to-your-web-server)
+
 ## Task 1 - User Setup
 
 In this task, the system user is setup with a specified home directory structure. We are creating a **non-login system** user. This type of user is used over a regular or root user because it is being used strictly for system operations and managing our services. The system user is more controlled with limited permissions. Since it is a non-login user, there is also **no direct access available** compared to regular or root users meaning **less risk** in the user account and its files getting compromised.
@@ -123,7 +129,13 @@ Set ownership by copying and running the command below:
 sudo chown -R webgen:webgen /var/lib/webgen
 ```
 
-`-R` specifies to give ownership recursively of nested directories and files to `webgen`.
+Since we will be using the script to make changes to the output file `index.html` as well as executing the `generate_index` script, it will be in best practice to allow permissions to user `webgen` as well.
+
+```
+sudo chmod 770 -R /var/lib/webgen
+```
+
+`-R` specifies to make changes recursively of nested directories and files to `webgen`.
 
 ## Task 2 - Service and Timer Setup
 
@@ -396,7 +408,7 @@ To allow **ssh connection**:
 sudo ufw allow ssh
 ```
 
-We also want to limit the rate of ssh attempts to prevent multiple unauthorized attempted connections:
+We also want to **limit the rate of ssh** attempts to prevent multiple unauthorized attempted connections:
 ```
 sudo ufw limit ssh
 ```
@@ -442,20 +454,24 @@ Perhaps iptables or your kernel needs to be upgraded.
 
 To fix this error, you may need to update your system and packages (as it states the iptable version is a legacy version). Run these commands below to fix this error:
 
-Updating system
+Updating system:
 ```
 sudo pacman -Syu #
 ```
-Installing new iptables version
+Installing new iptables version:
 ```
 sudo pacman -S iptables
 ```
-Restart iptables service
+Restart iptables service:
 ```
-sudo systemctl restart iptable
+sudo systemctl restart iptables
 ```
 
 >[!NOTE]
 > If the error still exists, your system may need to be rebooted using `sudo reboot` which will kick you out of your remote Linux system and will require you to ssh back in. Keep in mind that we still have **not** enabled the UFW yet, so we are still able to regularly ssh in.
 
 ## Task 5 - Connect to your web server
+
+With our web server all set up and secured by a firewall, we can attempt to connect to look at the HTML document.
+
+![Successful Connection](webgen_systeminfo.png)
