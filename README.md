@@ -12,7 +12,7 @@ These instructions are set up using the Arch Linux distribution for Linux. This 
 
 ## Task 1 - User Setup
 
-In this task, the system user is setup with a specified home directory structure. We are creating a **non-login system** user. This type of user is used over a regular or root user because it is being used strictly for system operations and managing our services. The system user is more controlled with limited permissions. Since it is a non-login user, there is also **no direct access available** compared to regular or root users meaning **less risk** in the user account and its files getting compromised.
+In this task, the system user is setup with a specified home directory structure. We are creating a **non-login system** user. This type of user is used over a regular or root user because it is being used strictly for system operations and managing our services. The system user is more controlled with limited permissions. Since it is a non-login user, there is also **no direct access available** compared to regular or root users meaning **less risk** in the user account and its files getting compromised. [^1]
 
 ### Creating the system user `webgen`
 
@@ -22,7 +22,7 @@ To create our system user `webgen`, copy and run the command below:
 sudo useradd -r -d /var/lib/webgen -s /usr/sbin/nologin webgen
 ```
 
-`-r` specifies it is a system account/user
+`-r` specifies it is a system account/user [^2]
 `-d` specifies the path of home directory for our user `webgen`
 `-s` specifies the shell using the appropriate `nologin` shell since our user is a non-login user
 
@@ -191,7 +191,7 @@ Persistent=true
 WantedBy=timers.target
 ```
 
-The `Persistent` directive will tell the system to run the service if the specified timing was missed. For example, if the server was shut down before the time the service should have ran, the next time the server is up it will run the service immediately.
+The `Persistent` directive will tell the system to run the service if the specified timing was missed. For example, if the server was shut down before the time the service should have ran, the next time the server is up it will run the service immediately. [^3]
 
 >[!CAUTION]
 > By default, most servers are set to UTC time zone. If you want this timer to run at 05:00 during local time. Refer to the commands below to set a time zone.
@@ -259,7 +259,7 @@ sudo pacman -S nginx
 
 ### Configuring nginx.conf
 
-In the configuration for nginx, I will be making use of server block files. Server block files serve as multiple domains and allows disabling and enabling certain sites. Creating server blocks helps managing separate configurations for different servers or websites easier. Since the server block is split into separte files, they can be easily disabled or enabled without heavily modifying the `nginx.conf` file.
+In the configuration for nginx, I will be making use of server block files. Server block files serve as multiple domains and allows disabling and enabling certain sites. Creating server blocks helps managing separate configurations for different servers or websites easier. Since the server block is split into separte files, they can be easily disabled or enabled without heavily modifying the `nginx.conf` file. [^4]
 
 In this configuration step, I will be using the `sites-enabled` and `sites-available` approach.
 
@@ -401,14 +401,14 @@ sudo pacman -S ufw
 
 ### Allowing `ssh` and `http` access
 
-For instructional reasons, we will enable ssh from anywhere. In practice, we would **only** allow ssh connections from specific and private ip addresses, as well as using host service that authorizes private connections.
+For instructional reasons, we will enable ssh from anywhere. In practice, we would **only** allow ssh connections from specific and private ip addresses, as well as using host service that authorizes private connections. [^5]
 
 To allow **ssh connection**:
 ```
 sudo ufw allow ssh
 ```
 
-We also want to **limit the rate of ssh** attempts to prevent multiple unauthorized attempted connections:
+We also want to **limit the rate of ssh** attempts to prevent multiple unauthorized attempted connections: [^5]
 ```
 sudo ufw limit ssh
 ```
@@ -456,7 +456,7 @@ To fix this error, you may need to update your system and packages (as it states
 
 Updating system:
 ```
-sudo pacman -Syu #
+sudo pacman -Syu
 ```
 Installing new iptables version:
 ```
@@ -475,3 +475,11 @@ sudo systemctl restart iptables
 With our web server all set up and secured by a firewall, we can attempt to connect to look at the HTML document.
 
 ![Successful Connection](webgen_systeminfo.png)
+
+# References
+
+[^1]: https://unix.stackexchange.com/questions/10852/whats-the-difference-between-sbin-nologin-and-bin-false
+[^2]: https://man7.org/linux/man-pages/man8/useradd.8.html
+[^3]: https://wiki.archlinux.org/title/Systemd
+[^4]: https://wiki.archlinux.org/title/Nginx
+[^5]: https://wiki.archlinux.org/title/Uncomplicated_Firewall
