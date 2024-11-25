@@ -139,7 +139,7 @@ sudo nvim /etc/systemd/system/generate_index.service
 
 Then copy and paste the unit file sections below to the service file:
 
-```shell
+```ini
 [Unit]
 Description=Generate Index Script Service
 Wants=network-online.target
@@ -167,7 +167,7 @@ sudo nvim /etc/systemd/system/generate_index.timer
 
 Then copy paste our configuration for the timer below:
 
-```shell
+```ini
 [Unit]
 Description=Generate Index Service Timer
 
@@ -189,5 +189,188 @@ The `Persistent` directive will tell the system to run the service if the specif
 > For example, setting to Vancouver, Canada:
 > `sudo timedatectl set-timezone America/Vancouver`
 
+### Enabling the timer
 
+Run the command below to **enable** the timer so it starts automatically after system boot:
 
+```
+sudo systemctl enable generate_index.timer
+```
+
+Run the command below to **start** the timer:
+
+```
+sudo systemctl start generate_index.timer
+```
+
+To verify if the **status** of the timer service is active and runs successfully, run the command:
+
+```
+sudo systemctl status generate_index.timer
+```
+
+You should see part of the output message displayed that says `Active: active(waiting)` which tells that the timer is activate.
+
+To test if the service itself runs successfully, similarly, start the service by running:
+
+```
+sudo systemctl start generate_index.service
+```
+
+>[!NOTE]
+> By starting the service, you are checking the single instance of the service being ran. We **do not** want to enable the service, as the **service's execution will be handled by the timer** which is enabled instead.
+
+And again, check the status:
+```
+sudo systemctl status generate_index.service
+```
+
+You will see in the output that the service's active status is `inactive(dead)` because the service has completed its task in running the `generate_index` script once, and generated the `index.html` file. To see the a detailed log, you can run the command:
+
+```
+sudo journalctl -u generate_index.service
+```
+
+Below the log you will see that the service started, then generated `index.html` file, and finally deactivated succesfully.
+
+## Task 3 - nginx configuration
+
+In this task, nginx is used and configured to act as a web server to server our `index.html` page and display the system information.
+
+### Install nginx
+
+First, install the nginx package by running the command:
+
+```
+sudo pacman -S nginx
+```
+
+### Configuring nginx.conf
+
+In the configuration for nginx, I will be making use of server block files. Server block files serve as multiple domains and allows disabling and enabling certain sites. Creating server blocks helps managing separate configurations for different servers or websites easier. Since the server block is split into separte files, they can be easily disabled or enabled without heavily modifying the `nginx.conf` file.
+
+In this configuration step, I will be using the `sites-enabled` and `sites-available` approach.
+
+First create the following directories:
+
+```
+sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
+```
+
+Using the text editor, create a new server block file by creating and opening the file:
+
+```
+sudo nvim /etc/nginx/sites-available/webgen.conf
+```
+
+Copy the code below into the `webgen.conf` file created:
+
+```bash
+server {
+    # Tells which port to listen on. 80 (HTTP).
+   listen 80;
+    # Specifies IPv6 
+   listen [::]:80;
+
+    # The domain name of the incoming traffic, must be unique
+   server_name webgen.sysinfo;
+
+    # Specifies the root directory of the website files to serve
+   root /var/lib/webgen/HTML;
+   # Specifies name of root document or index
+   index index.html;
+        # Specifies what should be done when user attempts to request `website.com` versus `website.com/help`
+        location / {
+        # try_files directive used to check for existence of files, in this case it checks the user's request 
+        # in the $uri variable in the form of a file and directory.
+        # If neither exist, nginx returns a 404 error.
+        try_files $uri $uri/ =404;
+        }
+}
+```
+
+Now that the server is configured and the index file is specified, nginx.conf needs to be configured to connect to our desired server.
+
+Using a text editor, open the `nginx.conf` file:
+
+```
+sudo nvim /etc/nginx/nginx.conf
+```
+
+There will be a lot of default values, and since server blocks are being utilized in this configuration, there are minimal modifications required.
+
+At the top of the `nginx.conf` file, you can see part of the file that specifies the user that is commented out:
+
+```
+...
+#user http;
+worker_processes 1;
+...
+```
+
+Change this section of code to the code below:
+```
+user webgen webgen;
+worker_processes auto;
+```
+
+This allows nginx the correct permissions for file management involving `webgen` and aligns the web server service with our specified user.
+
+>[!NOTE]
+> Changing the worker_processes directive is optional, but it defines for nginx the amount of connections accepted and how many processors will be made use. Using `auto` will allow nginx to auto-detect the optimal value.
+
+A last and simple step to modifying the `conf` file is to append our `sites-enabled` directory.
+
+In the `http` block, append the `include` code:
+
+```
+...
+http {
+    include /etc/nginx/sites-enabled/*;
+}
+...
+```
+
+Finally, enable the server block to be utilized by simply creating a symbolic link:
+
+```
+sudo ln -s /etc/nginx/sites-available/webgen.conf /etc/nginx/sites-enabled/webgen.conf
+```
+
+### Testing nginx services
+
+After the configuration is complete, we can test our nginx services by running a few commands.
+
+First lets restart nginx after all of our changes made:
+
+```
+sudo systemctl restart nginx
+```
+
+We can test and check for syntax errors in our `nginx.conf` file using the command:
+```
+sudo nginx -t
+```
+
+Then check the status of the nginx service:
+
+```
+sudo systemctl status nginx
+```
+
+>[!CAUTION]
+> You may receive a warning during the status check for your nginx service that looks like:
+>
+> ` [warn] 18872#18872: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size`
+>
+> Open the `nginx.conf` file and append these configurations in the `http` block to fix this error:
+> ```
+> http {
+>    types_hash_max_size 4096;
+>    server_names_hash_bucket_size 128;
+>    ...
+> }
+> ```
+> Restart and check the status of the nginx service after making these changes.
+
+If your nginx status is active, then your web server is online! Try connecting by typing into the web browser the `ipv4` address of the server.
