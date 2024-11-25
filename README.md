@@ -2,6 +2,15 @@
 
 These instructions are set up using the Arch Linux distribution for Linux. This repository will instruct how to setup a Bash script that generates a static `index.html` file that displays some system information. By using the `systemd` utility, a service file will be configured to execute the script with a timer file that activates the service everyday at 05:00. The HTML document will be served using the web server `nginx` secured by the Uncomplicated Firewall `ufw` package.
 
+# Repository Contents
+
+1. `generate_index` script file to generate the `index.html` document
+2. `generate_index.service` service file that executes `generate_index` script
+3. `generate_index.timer` timer file that runs service at specified time
+4. `nginx.conf` nginx configuration file to setup web server
+5. `webgen.conf` server block file
+6. `webgen_systeminfo.png` example of successful connection
+
 # Table of Contents
 
 1. [User Setup](#task-1---user-setup)
@@ -118,6 +127,16 @@ else
     exit 1
 fi
 ```
+
+>[!TIP]
+> If you would like to make changes to the script to display more information, you can declare another new variable and grab the relevant information using command expansion. For example, if you want to get the model name of our CPU, we would add the code below:
+> ```
+> CPU_MODEL_NAME=$(lscpu | grep -w "Model name" | cut -d ':' -f2 | tr -d " ")
+> ```
+>
+> Then in the HTML file builder part of the code, add the relevant HTML tags and call our new `$CPU_MODEL_NAME` variable. For example:
+>
+> `<p><strong>CPU Model Name:</strong> $CPU_MODEL_NAME</p>`
 
 There is no need to copy and paste any code or text manually into `index.html` since it will be automatically filled by our `generate_index` script. 
 
